@@ -1,25 +1,87 @@
-#include <Ethernet.h>
+#include "EtherShield.h"
 
-byte mac[] = { 0xFF, 0xAA, 0x09, 0x02, 0x0D, 0xED };  
-byte ip[] = { 192, 168, 0, 224 };    
-byte gateway[] = { 192, 168, 0, 1 };
-byte subnet[] = { 255, 255, 255, 0 };
+const int led = 6;
+boolean ledState = LOW;
 
-Server server = Server(2020);
+static uint8_t mymac[6] = {0x54,0x55,0x58,0x10,0x00,0x25}; 
 
-void setup()
+static uint8_t myip[4] = {192,168,0,177};
+
+#define MYWWWPORT 80
+#define BUFFER_SIZE 550
+static uint8_t buf[BUFFER_SIZE+1];
+
+EtherShield es=EtherShield();
+
+uint16_t print_data(uint8_t *buf)
 {
-  Ethernet.begin(mac, ip, gateway, subnet);
-  server.begin();
+  uint16_t plen;
+
+  plen=es.ES_fill_tcp_data_p(buf,plen,PSTR("ENNE"));
+
+  return(plen);
 }
 
-void loop()
+uint16_t print_data1(uint8_t *buf)
 {
-  // if an incoming client connects, there will be bytes available to read:
-  Client client = server.available();
-  if (client == true) {
-    // read bytes from the incoming client and write them back
-    // to any clients connected to the server:
-    server.write(client.read());
+  uint16_t plen;
+
+  plen=es.ES_fill_tcp_data_p(buf,plen,PSTR("TEST"));
+
+  return(plen);
+}
+
+
+void setup(){
+  pinMode(led, OUTPUT);
+  
+  // Initialise SPI interface
+  es.ES_enc28j60SpiInit();
+  // initialize enc28j60
+  es.ES_enc28j60Init(mymac);
+  // init the ethernet/ip layer:
+  es.ES_init_ip_arp_udp_tcp(mymac,myip, MYWWWPORT);
+}
+
+void loop(){
+  uint16_t plen, dat_p;
+
+  while(1) {
+    // read packet, handle ping and wait for a tcp packet:
+    dat_p=es.ES_packetloop_icmp_tcp(buf,es.ES_enc28j60PacketReceive(BUFFER_SIZE, buf));
+
+    /* dat_p will be unequal to zero if there is a valid 
+     * http get */
+    if(dat_p==0){
+      // no http request
+      continue;
+    }
+    // tcp port 80 begin
+    
+    if (strncmp("/ ",(char *)&(buf[dat_p+4]),2)==0){
+      dat_p=print_data(buf);
+      goto SENDTCP;
+    }
+
+    if (strncmp("/ad ",(char *)&(buf[dat_p+4]),4)==0){
+      dat_p=print_data1(buf);
+      ledState = !ledState;
+      goto SENDTCP;
+    }
+
+    else{
+      dat_p=es.ES_fill_tcp_data_p(buf,0,PSTR("HTTP/1.0 401 Unauthorized\r\nContent-Type: text/html\r\n\r\n<h1>401 Unauthorized</h1>"));
+      goto SENDTCP;
+    }
+
+
+SENDTCP:
+    es.ES_www_server_reply(buf,dat_p); // send web page data
+    // tcp port 80 end
+    digitalWrite(led, ledState);
   }
+
 }
+
+
+

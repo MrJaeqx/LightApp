@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:text="Lamp 1"
         android:layout_marginLeft="20dp"
-        android:gravity="center"
+        android:gravity="center_vertical|center_horizontal"
         android:textSize="20dp" />
     <Switch
         android:id="@+id/switch1"
@@ -47,5 +47,5 @@
         android:layout_width="match_parent"
         android:layout_marginTop="200px"
         android:layout_marginRight="20dp"
-        android:layout_marginLeft="20dp"/>
+        android:layout_marginLeft="20dp" />
 </RelativeLayout>
