@@ -4,13 +4,22 @@ import android.app.Activity;
 import android.app.ActionBar;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
+import android.widget.Switch;
 import android.widget.ToggleButton;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class HomeScreen extends Activity {
 
@@ -63,15 +72,40 @@ public class HomeScreen extends Activity {
         }
     }
 
+    private void setLight(int light, int status) {
+        new HttpConnection().execute("update", Integer.toString(light), Integer.toString(status));
+    }
+
     public void switchLight1(View view) {
         // Is the toggle on?
-        boolean on = ((ToggleButton) view).isChecked();
+        boolean on = ((Switch) view).isChecked();
 
         if (on) {
-            // Enable vibrate
+            setLight(1,1);
         } else {
-            // Disable vibrate
+            setLight(1,0);
         }
     }
 
+    public void switchLight2(View view) {
+        // Is the toggle on?
+        boolean on = ((Switch) view).isChecked();
+
+        if (on) {
+            setLight(2,1);
+        } else {
+            setLight(2,0);
+        }
+    }
+
+    public void switchLight3(View view) {
+        // Is the toggle on?
+        boolean on = ((Switch) view).isChecked();
+
+        if (on) {
+            setLight(3,1);
+        } else {
+            setLight(3,0);
+        }
+    }
 }
