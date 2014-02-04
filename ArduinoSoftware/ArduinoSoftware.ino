@@ -1,11 +1,7 @@
 #include "EtherShield.h"
+#include <NewRemoteTransmitter.h>
 
-const int light1 = 2;
-const int light2 = 3;
-const int light3 = 4;
-boolean light1State = LOW;
-boolean light2State = LOW;
-boolean light3State = LOW;
+NewRemoteTransmitter transmitter(8786506, 3, 260, 3);
 
 static uint8_t mymac[6] = {0x54,0x55,0x58,0x10,0x00,0x25}; 
 
@@ -36,10 +32,11 @@ uint16_t print_data1(uint8_t *buf)
 }
 
 
+void switchLight(int channel, boolean switchStatus) {
+  transmitter.sendUnit(channel, switchStatus);
+}
+
 void setup(){
-  pinMode(light1, OUTPUT);
-  pinMode(light2, OUTPUT);
-  pinMode(light3, OUTPUT);
   
   // Initialise SPI interface
   es.ES_enc28j60SpiInit();
@@ -71,32 +68,32 @@ void loop(){
 
     if (strncmp("/10 ",(char *)&(buf[dat_p+4]),4)==0){
       dat_p=print_data1(buf);
-      light1State = LOW;
+      switchLight(12,LOW);
       goto SENDTCP;
     }
     if (strncmp("/11 ",(char *)&(buf[dat_p+4]),4)==0){
       dat_p=print_data1(buf);
-      light1State = HIGH;
+      switchLight(12,HIGH);
       goto SENDTCP;
     }
     if (strncmp("/20 ",(char *)&(buf[dat_p+4]),4)==0){
       dat_p=print_data1(buf);
-      light2State = LOW;
+      switchLight(13,LOW);
       goto SENDTCP;
     }
     if (strncmp("/21 ",(char *)&(buf[dat_p+4]),4)==0){
       dat_p=print_data1(buf);
-      light2State = HIGH;
+      switchLight(13,HIGH);
       goto SENDTCP;
     }
     if (strncmp("/30 ",(char *)&(buf[dat_p+4]),4)==0){
       dat_p=print_data1(buf);
-      light3State = LOW;
+      switchLight(14,LOW);
       goto SENDTCP;
     }
     if (strncmp("/31 ",(char *)&(buf[dat_p+4]),4)==0){
       dat_p=print_data1(buf);
-      light3State = HIGH;
+      switchLight(14,HIGH);
       goto SENDTCP;
     }
 
@@ -109,9 +106,6 @@ void loop(){
 SENDTCP:
     es.ES_www_server_reply(buf,dat_p); // send web page data
     // tcp port 80 end
-    digitalWrite(light1, light1State);
-    digitalWrite(light2, light2State);
-    digitalWrite(light3, light3State);
   }
 
 }
