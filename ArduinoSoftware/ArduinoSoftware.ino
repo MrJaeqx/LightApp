@@ -6,8 +6,8 @@
 #define MYWWWPORT 80
 #define BUFFER_SIZE 550
 
-NewRemoteTransmitter transmitter(8786506, 3, 260, 3);
-OneWire oneWire(4);
+NewRemoteTransmitter transmitter(8786506, 2, 260, 3);
+OneWire oneWire(3);
 DallasTemperature sensors(&oneWire);
 DeviceAddress insideThermometer;
 EtherShield es = EtherShield();
@@ -118,10 +118,43 @@ void switchLight(int channel, boolean switchStatus) {
 
 void checkCommand(uint16_t plen, uint16_t dat_p) {
 
+  String light = "";
+  String state = "";
+  
+  String data = (char *)&(buf[dat_p]);
+  
+  if(data.startsWith("GET /")) {    
+    data = data.substring(5,data.length());
+    int pos = data.indexOf("/");
+    light = data.substring(0,pos);   
+    state = data.substring(pos+1,pos+2);
+  }
+  
+  if(light == "0" || light == "1" || light == "2" || light == "3"|| light == "4"|| light == "5"|| light == "6"|| light == "7"|| light == "8"|| light == "9"|| light == "10"|| light == "11"|| light == "12"|| light == "13"|| light == "14"|| light == "15"){
+     if(state == "0" || state == "1") {
+      char charBuf[light.length()];
+      light.toCharArray(charBuf, light.length());
+      int n = atoi(charBuf);
+      boolean s = false;
+      if(state = "1") {
+        s = true;
+      }
+      
+      switchLight(n, s);
+      
+      dat_p=print_data_xml(buf);
+      sendTCP(dat_p);
+      
+      Serial.println("OK!");
+     }
+     Serial.println("NO STATE!");
+  }
+  Serial.println("NO LIGHT!");
+  
   if (strncmp("/ ",(char *)&(buf[dat_p+4]),2)==0) {
     dat_p=print_data_xml(buf);
     sendTCP(dat_p);
-  }
+  }/*
   else if (strncmp("/10 ",(char *)&(buf[dat_p+4]),4)==0) {
     switchLight(12,LOW);
     dat_p=print_data_xml(buf);
@@ -155,7 +188,7 @@ void checkCommand(uint16_t plen, uint16_t dat_p) {
   else if (strncmp("/r ",(char *)&(buf[dat_p+4]),3)==0) {
     dat_p=print_data_xml(buf);
     sendTCP(dat_p);
-  } 
+  } */
   else {
     dat_p=es.ES_fill_tcp_data_p(buf,0,PSTR("HTTP/1.0 401 Unauthorized\r\nContent-Type: text/html\r\n\r\n<h1>401 Unauthorized</h1>"));
     sendTCP(dat_p);
@@ -163,7 +196,8 @@ void checkCommand(uint16_t plen, uint16_t dat_p) {
 }
 
 void setup(){
-
+  Serial.begin(9600);
+  
   sensors.begin();
   sensors.getAddress(insideThermometer, 0);
   sensors.setResolution(insideThermometer, 9);
